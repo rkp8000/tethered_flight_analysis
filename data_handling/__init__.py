@@ -11,7 +11,7 @@ BARPOS_CONVERSION = 360/5.
 
 
 def load_edr(fname, header_block_size=HEADER_BLOCK_SIZE, dt=.001,
-             lmr_zcore=True, barpos_in_degrees=True):
+             lmr_zscore=True, barpos_in_degrees=True):
     """Load header info and data from binary file."""
 
     if fname[-4:].lower() != '.edr':
@@ -81,7 +81,7 @@ def load_edr(fname, header_block_size=HEADER_BLOCK_SIZE, dt=.001,
                 idxs = idxs[:-1]
             data = data[idxs, :]
 
-    if lmr_zcore:
+    if lmr_zscore:
         lampz = zscore(data[:, cols.index('Lamp')])
         rampz = zscore(data[:, cols.index('Ramp')])
         data[:, cols.index('LmR')] = lampz - rampz
