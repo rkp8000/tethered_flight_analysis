@@ -8,10 +8,11 @@ from math_tools.signal import segment_by_threshold as sbt
 from data_handling import load_edr
 
 
-FNAME = '/Users/rkp/Dropbox/arena_data/edr_files_visual_expt/150422_insect3_tr1.EDR'
+FNAME = '/Users/rkp/Dropbox/arena_data/edr_files_visual_expt/150422_insect11_tr1.EDR'
 
 DT = 0.05
 MAXT = 340
+MAXTS = int(MAXT/DT)
 
 TPRE = 1
 TPOST = 3
@@ -22,8 +23,8 @@ TSPOST = int(TPOST/DT)
 FACECOLOR = 'k'
 AXCOLOR = 'w'
 FONTSIZE = 24
-DATA_FIGSIZE = (13, 15)
-RESULT_FIGSIZE = (6, 10)
+DATA_FIGSIZE = (15, 10)
+RESULT_FIGSIZE = (7, 10)
 
 
 # get data we're interested in
@@ -61,10 +62,17 @@ triggered_barspeeds = np.zeros((len(onsets), TSPRE + TSPOST))
 triggered_t = np.arange(-TPRE, TPOST, DT)
 
 for octr, onset in enumerate(onsets):
-    triggered_freqs[octr, :] = freq[onset - TSPRE:onset + TSPOST]
-    triggered_lmrs[octr, :] = np.abs(lmr[onset - TSPRE:onset + TSPOST])
-    triggered_barspeeds[octr, :] = barspeed[onset - TSPRE:onset + TSPOST]
+    if onset < MAXTS - TSPOST:
+        triggered_freqs[octr, :] = freq[onset - TSPRE:onset + TSPOST]
+        triggered_lmrs[octr, :] = np.abs(lmr[onset - TSPRE:onset + TSPOST])
+        triggered_barspeeds[octr, :] = barspeed[onset - TSPRE:onset + TSPOST]
+    else:
+        break
 
+# remove unused triggered behaviors
+triggered_freqs = triggered_freqs[:octr]
+triggered_lmrs = triggered_lmrs[:octr]
+triggered_barspeeds = triggered_barspeeds[:octr]
 
 # offset triggered averages by value at start
 triggered_freqs -= triggered_freqs[:, [TSPRE]]
