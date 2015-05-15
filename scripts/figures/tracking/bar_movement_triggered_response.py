@@ -8,10 +8,10 @@ from math_tools.signal import segment_by_threshold as sbt
 from data_handling import load_edr
 
 
-FNAME = '/Users/rkp/Dropbox/arena_data/edr_files_visual_expt/150422_insect11_tr1.EDR'
+FNAME = '/Users/rkp/Dropbox/arena_data/edr_files_visual_expt/150513_insect15_tr1.EDR'
 
 DT = 0.05
-MAXT = 340
+MAXT = 700
 MAXTS = int(MAXT/DT)
 
 TPRE = 1
@@ -34,7 +34,8 @@ t = data[:MAXT/DT, cols.index('time')]
 freq = data[:MAXT/DT, cols.index('Freq')]
 lmr = data[:MAXT/DT, cols.index('LmR')]
 barpos = data[:MAXT/DT, cols.index('Barpos')]
-barspeed = np.abs(cdiff(barpos)/DT)
+barvel = cdiff(barpos)/DT
+barspeed = np.abs(barvel)
 
 
 # plot entire data series
@@ -56,16 +57,28 @@ data_axs[-1].set_xlabel('time (s)')
 # get all indices of times when bar started moving
 _, onsets, offsets, _ = sbt(barspeed, th=5).T
 
+# get triggered frequencies, etc.
 triggered_freqs = np.zeros((len(onsets), TSPRE + TSPOST))
 triggered_lmrs = np.zeros((len(onsets), TSPRE + TSPOST))
+triggered_barvels = np.zeros((len(onsets), TSPRE + TSPOST))
 triggered_barspeeds = np.zeros((len(onsets), TSPRE + TSPOST))
 triggered_t = np.arange(-TPRE, TPOST, DT)
+
+# also store what kind of onset each one was
+left_motion_idxs = []
+right_motion_idxs = []
 
 for octr, onset in enumerate(onsets):
     if onset < MAXTS - TSPOST:
         triggered_freqs[octr, :] = freq[onset - TSPRE:onset + TSPOST]
         triggered_lmrs[octr, :] = np.abs(lmr[onset - TSPRE:onset + TSPOST])
+        triggered_barvels[octr, :] = barvel[onset - TSPRE:onset + TSPOST]
         triggered_barspeeds[octr, :] = barspeed[onset - TSPRE:onset + TSPOST]
+
+        if triggered_barvels[octr, :].mean() > 0:
+            right_motion_idxs += [octr]
+        elif triggered_barvels[octr, :].mean() < 0:
+            left_motion_idxs += [octr]
     else:
         break
 
@@ -91,8 +104,8 @@ trig_avg_axs[1].plot(triggered_t, triggered_lmrs.mean(0), c='b', lw=3)
 trig_avg_axs[-1].plot(triggered_t, triggered_barspeeds.T, c='k', lw=1, alpha=.1)
 trig_avg_axs[-1].plot(triggered_t, triggered_barspeeds.mean(0), c='b', lw=3)
 
-trig_avg_axs[0].set_ylabel('freq (Hz)')
-trig_avg_axs[1].set_ylabel('|L-R|')
+trig_avg_axs[0].set_ylabel('change in freq (Hz)')
+trig_avg_axs[1].set_ylabel('change in |L-R|')
 trig_avg_axs[-1].set_ylabel('barspeed (deg/s)')
 
 trig_avg_axs[-1].set_xlabel('time since motion onset (s)')
